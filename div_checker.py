@@ -1,23 +1,33 @@
 import streamlit as st
+from html.parser import HTMLParser
+
+class DivTagChecker(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.stack = []
+        self.errors = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "div":
+            self.stack.append(self.getpos())
+
+    def handle_endtag(self, tag):
+        if tag == "div":
+            if not self.stack:
+                self.errors.append(f"Unopened div tag closed at {self.getpos()}")
+            else:
+                self.stack.pop()
+
+    def check_html(self, html_content):
+        self.feed(html_content)
+        while self.stack:
+            pos = self.stack.pop()
+            self.errors.append(f"Unclosed div tag opened at {pos}")
+        return self.errors
 
 def check_html_divs(html_content):
-    lines = html_content.split('\n')
-    stack = []  # Stack to keep track of opening div tags (line number, line content)
-    errors = []
-
-    for i, line in enumerate(lines, start=1):
-        if '<div' in line:  # Found opening div tag
-            stack.append((i, line))
-        if '</div>' in line:  # Found closing div tag
-            if stack:
-                stack.pop()  # Properly closed div, remove last opened div from stack
-            else:
-                errors.append(f"Line {i} has unopened closing div: {line.strip()}")
-    
-    # Any remaining opening divs in stack are unclosed
-    for opening_line, content in stack:
-        errors.append(f"Line {opening_line} has unclosed opening div: {content.strip()}")
-    
+    checker = DivTagChecker()
+    errors = checker.check_html(html_content)
     return errors
 
 st.title("HTML Div Checker")
@@ -33,6 +43,7 @@ if uploaded_file is not None:
             st.write(error)
     else:
         st.write("No missing opening or closing div tags found.")
+
 
 
 # Add "Developed by Aditya" at the bottom of the Streamlit app interface
