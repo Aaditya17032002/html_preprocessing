@@ -12,9 +12,6 @@ def process_html(input_html):
         if href != "index.html" and "https://www.barodaweb.com/" not in href:
             a_tag['href'] = "#"
     
-    # Add "Developed by Aditya" at the end of the document
-    soup.body.append(soup.new_tag("p", string="Developed by Aditya"))
-    
     # Return the modified HTML as a string
     return str(soup)
 
@@ -32,3 +29,7 @@ if uploaded_file is not None:
     
     # Display processed HTML or allow download
     st.download_button(label="Download Processed HTML", data=processed_html, file_name="processed.html", mime="text/html")
+
+# Add "Developed by Aditya" at the bottom of the Streamlit app interface
+st.markdown("---")
+st.markdown("Developed by Aditya")
