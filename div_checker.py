@@ -33,3 +33,8 @@ if uploaded_file is not None:
             st.write(error)
     else:
         st.write("No missing opening or closing div tags found.")
+
+
+# Add "Developed by Aditya" at the bottom of the Streamlit app interface
+st.markdown("---")
+st.markdown("Developed by Aditya")
