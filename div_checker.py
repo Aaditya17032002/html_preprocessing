@@ -1,53 +1,45 @@
 import streamlit as st
-from html.parser import HTMLParser
 
-class HTMLBeautifier(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.indent_level = 0
-        self.beautified_html = ""
+def find_div_issues(html_lines):
+    stack = []  # To store line numbers of opened <div> tags
+    issues = []  # To collect issues found
 
-    def handle_starttag(self, tag, attrs):
-        if tag == "div":
-            self.beautified_html += "    " * self.indent_level + f"<{tag}"
-            for attr in attrs:
-                self.beautified_html += f' {attr[0]}="{attr[1]}"'
-            self.beautified_html += ">\n"
-            self.indent_level += 1
-        else:
-            # Handle other tags if necessary
-            pass
+    for line_num, line in enumerate(html_lines, start=1):
+        # Check for <div> opening tags
+        if '<div>' in line:
+            stack.append(line_num)
+        # Check for <div> closing tags
+        if '</div>' in line:
+            if stack:
+                stack.pop()  # Correctly closed <div>, remove from stack
+            else:
+                # Found closing tag without matching opening tag
+                issues.append(f"Line {line_num}: Unmatched closing </div> tag.")
+    
+    # Any remaining opening <div> tags in stack are unmatched
+    for line_num in stack:
+        issues.append(f"Line {line_num}: Unmatched opening <div> tag.")
 
-    def handle_endtag(self, tag):
-        if tag == "div":
-            self.indent_level -= 1
-            self.beautified_html += "    " * self.indent_level + f"</{tag}>\n"
-        else:
-            # Handle other tags if necessary
-            pass
+    return issues
 
-    def handle_data(self, data):
-        if data.strip():
-            self.beautified_html += "    " * self.indent_level + data.strip() + "\n"
+st.title("HTML <div> Tag Checker")
 
-    def beautify_html(self, html_content):
-        self.feed(html_content)
-        return self.beautified_html
-
-def beautify_html_content(html_content):
-    beautifier = HTMLBeautifier()
-    return beautifier.beautify_html(html_content)
-
-st.title("HTML Beautifier with Div Structure Awareness")
-
+# Upload HTML content
 uploaded_file = st.file_uploader("Upload your HTML file", type="html")
 
 if uploaded_file is not None:
-    content = uploaded_file.getvalue().decode("utf-8")
-    beautified_html = beautify_html_content(content)
+    # Read and decode the file
+    html_content = uploaded_file.getvalue().decode("utf-8").split('\n')
     
-    st.text_area("Beautified HTML", beautified_html, height=300)
+    # Find issues
+    div_issues = find_div_issues(html_content)
 
+    if div_issues:
+        st.write("Issues found with <div> tags:")
+        for issue in div_issues:
+            st.write(issue)
+    else:
+        st.write("No issues found with <div> tags.")
 
 
 
