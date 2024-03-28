@@ -1,48 +1,53 @@
 import streamlit as st
 from html.parser import HTMLParser
 
-class DivTagChecker(HTMLParser):
+class HTMLBeautifier(HTMLParser):
     def __init__(self):
-        super().__init__()
-        self.stack = []
-        self.errors = []
+        super().__init__(convert_charrefs=True)
+        self.indent_level = 0
+        self.beautified_html = ""
 
     def handle_starttag(self, tag, attrs):
         if tag == "div":
-            self.stack.append(self.getpos())
+            self.beautified_html += "    " * self.indent_level + f"<{tag}"
+            for attr in attrs:
+                self.beautified_html += f' {attr[0]}="{attr[1]}"'
+            self.beautified_html += ">\n"
+            self.indent_level += 1
+        else:
+            # Handle other tags if necessary
+            pass
 
     def handle_endtag(self, tag):
         if tag == "div":
-            if not self.stack:
-                self.errors.append(f"Unopened div tag closed at {self.getpos()}")
-            else:
-                self.stack.pop()
+            self.indent_level -= 1
+            self.beautified_html += "    " * self.indent_level + f"</{tag}>\n"
+        else:
+            # Handle other tags if necessary
+            pass
 
-    def check_html(self, html_content):
+    def handle_data(self, data):
+        if data.strip():
+            self.beautified_html += "    " * self.indent_level + data.strip() + "\n"
+
+    def beautify_html(self, html_content):
         self.feed(html_content)
-        while self.stack:
-            pos = self.stack.pop()
-            self.errors.append(f"Unclosed div tag opened at {pos}")
-        return self.errors
+        return self.beautified_html
 
-def check_html_divs(html_content):
-    checker = DivTagChecker()
-    errors = checker.check_html(html_content)
-    return errors
+def beautify_html_content(html_content):
+    beautifier = HTMLBeautifier()
+    return beautifier.beautify_html(html_content)
 
-st.title("HTML Div Checker")
+st.title("HTML Beautifier with Div Structure Awareness")
 
 uploaded_file = st.file_uploader("Upload your HTML file", type="html")
 
 if uploaded_file is not None:
     content = uploaded_file.getvalue().decode("utf-8")
-    errors = check_html_divs(content)
-    if errors:
-        st.write("Errors found:")
-        for error in errors:
-            st.write(error)
-    else:
-        st.write("No missing opening or closing div tags found.")
+    beautified_html = beautify_html_content(content)
+    
+    st.text_area("Beautified HTML", beautified_html, height=300)
+
 
 
 
